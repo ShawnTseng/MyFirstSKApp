@@ -1,5 +1,6 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Configuration;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
@@ -16,8 +17,17 @@ builder.AddOpenAIChatCompletion(
     endpoint: new Uri("https://models.github.ai/inference")
 );
 
+builder.Plugins.AddFromType<TimeInformationPlugin>();
+
 var kernel = builder.Build();
 
-Console.WriteLine("正在連線到 GitHub Models...");
-var result = await kernel.InvokePromptAsync("請用一句話介紹你自己，並確認你已連接成功。");
-Console.WriteLine($"\nAI 回覆：{result}");
+OpenAIPromptExecutionSettings settings = new()
+{
+    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+};
+
+var result = await kernel.InvokePromptAsync(
+    "現在幾點了？請包含今天的日期。", 
+    new(settings)
+);
+Console.WriteLine($"AI 回覆：{result}");
